@@ -15,8 +15,16 @@ const statusMap = {
 
 document.addEventListener('DOMContentLoaded', function() {
   const today = new Date().toISOString().split('T')[0];
-  document.getElementById('travelDate').value = today;
-  document.getElementById('travelDate').min = today;
+
+  const datePicker = initDatePicker('travelDatePicker', 'travelDate', 'travelDateDisplay', {
+    placeholder: '请选择乘车日期',
+    minToday: true,
+    onChange: function() {
+      selectedScheduleId = null;
+      loadSchedules();
+    }
+  });
+  datePicker.setValue(today);
 
   loadSchedules();
   bindEvents();
@@ -48,11 +56,6 @@ function bindEvents() {
         }
       }
     });
-  });
-
-  document.getElementById('travelDate').addEventListener('change', function() {
-    selectedScheduleId = null;
-    loadSchedules();
   });
 
   document.getElementById('filterAvailable').addEventListener('change', function() {
@@ -304,7 +307,8 @@ function renderBookingList(bookings) {
 
 async function showDetail(id) {
   try {
-    const res = await fetch(`${API_BASE}/bookings/${id}`);
+    const phone = document.getElementById('queryPhone').value.trim() || localStorage.getItem('bookingPhone');
+    const res = await fetch(`${API_BASE}/bookings/${id}?phone=${encodeURIComponent(phone || '')}`);
     const data = await res.json();
     if (data.code === 0) {
       currentBookingId = id;
@@ -345,7 +349,12 @@ async function cancelBooking() {
   if (!confirm('确定要取消该订单吗？')) return;
 
   try {
-    const res = await fetch(`${API_BASE}/bookings/${currentBookingId}/cancel`, { method: 'POST' });
+    const phone = document.getElementById('queryPhone').value.trim() || localStorage.getItem('bookingPhone');
+    const res = await fetch(`${API_BASE}/bookings/${currentBookingId}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
     const data = await res.json();
     if (data.code === 0) {
       showToast('取消成功');

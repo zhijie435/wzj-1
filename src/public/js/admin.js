@@ -16,19 +16,117 @@ const busStatusMap = {
   dispatched: { text: '运行中', class: 'bus-dispatched' }
 };
 
+function getAuthToken() {
+  return localStorage.getItem('adminToken');
+}
+
+function authenticatedFetch(url, options = {}) {
+  const token = getAuthToken();
+  const headers = { ...(options.headers || {}) };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return fetch(url, { ...options, headers });
+}
+
+function handleAuthError(data) {
+  if (data.code === 401) {
+    localStorage.removeItem('adminToken');
+    checkAuth();
+    showToast('登录已过期，请重新登录');
+    return true;
+  }
+  return false;
+}
+
+function checkAuth() {
+  const token = getAuthToken();
+  if (token) {
+    document.getElementById('loginView').classList.add('hidden');
+    document.getElementById('adminView').classList.remove('hidden');
+    document.getElementById('logoutWrap').classList.remove('hidden');
+    return true;
+  }
+  document.getElementById('loginView').classList.remove('hidden');
+  document.getElementById('adminView').classList.add('hidden');
+  document.getElementById('logoutWrap').classList.add('hidden');
+  return false;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   const today = new Date().toISOString().split('T')[0];
-  document.getElementById('filterDate').value = today;
+
+  if (checkAuth()) {
+    initAdmin(today);
+  }
+
+  bindAuthEvents(today);
+});
+
+function initAdmin(today) {
+  const datePicker = initDatePicker('filterDatePicker', 'filterDate', 'filterDateDisplay', {
+    placeholder: '请选择日期',
+    minToday: false
+  });
+  datePicker.setValue(today);
 
   bindEvents();
   loadPendingBookings();
   loadBuses();
-});
+}
+
+function bindAuthEvents(today) {
+  document.getElementById('loginBtn').addEventListener('click', function() {
+    doLogin(today);
+  });
+
+  document.getElementById('adminPassword').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin(today);
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', function() {
+    localStorage.removeItem('adminToken');
+    checkAuth();
+  });
+}
+
+async function doLogin(today) {
+  const username = document.getElementById('adminUsername').value.trim();
+  const password = document.getElementById('adminPassword').value.trim();
+  const errorEl = document.getElementById('loginError');
+
+  if (!username || !password) {
+    errorEl.textContent = '请输入用户名和密码';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (data.code === 0 && data.data && data.data.token) {
+      localStorage.setItem('adminToken', data.data.token);
+      errorEl.style.display = 'none';
+      checkAuth();
+      initAdmin(today);
+    } else {
+      errorEl.textContent = data.message || '用户名或密码错误';
+      errorEl.style.display = 'block';
+    }
+  } catch (e) {
+    errorEl.textContent = '登录失败，请稍后重试';
+    errorEl.style.display = 'block';
+  }
+}
 
 function bindEvents() {
-  document.querySelectorAll('.tab').forEach(tab => {
+  document.querySelectorAll('.nav-item').forEach(tab => {
     tab.addEventListener('click', function() {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
       this.classList.add('active');
       const tabName = this.dataset.tab;
       document.getElementById('pending-tab').classList.toggle('hidden', tabName !== 'pending');
@@ -56,8 +154,9 @@ async function loadPendingBookings() {
   if (params.length) url += '?' + params.join('&');
 
   try {
-    const res = await fetch(url);
+    const res = await authenticatedFetch(url);
     const data = await res.json();
+    if (handleAuthError(data)) return;
     if (data.code === 0) {
       renderPendingList(data.data);
     }
@@ -100,8 +199,9 @@ async function openAssignModal(scheduleId, travelDate, passengerCount, desc) {
   `;
 
   try {
-    const res = await fetch(`${API_BASE}/dispatch/buses?status=idle`);
+    const res = await authenticatedFetch(`${API_BASE}/dispatch/buses?status=idle`);
     const data = await res.json();
+    if (handleAuthError(data)) return;
     if (data.code === 0) {
       const buses = data.data.filter(b => b.capacity >= passengerCount);
       if (buses.length === 0) {
@@ -147,7 +247,7 @@ async function confirmAssign() {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/dispatch/assign`, {
+    const res = await authenticatedFetch(`${API_BASE}/dispatch/assign`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -157,6 +257,7 @@ async function confirmAssign() {
       })
     });
     const data = await res.json();
+    if (handleAuthError(data)) return;
     if (data.code === 0) {
       showToast(data.message);
       closeAssignModal();
@@ -171,8 +272,9 @@ async function confirmAssign() {
 
 async function loadTrips() {
   try {
-    const res = await fetch(`${API_BASE}/dispatch/trips`);
+    const res = await authenticatedFetch(`${API_BASE}/dispatch/trips`);
     const data = await res.json();
+    if (handleAuthError(data)) return;
     if (data.code === 0) {
       renderTrips(data.data);
     }
@@ -219,12 +321,13 @@ async function completeTrip(busId) {
   if (!confirm('确认该班次已完成行程？')) return;
 
   try {
-    const res = await fetch(`${API_BASE}/dispatch/complete`, {
+    const res = await authenticatedFetch(`${API_BASE}/dispatch/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bus_id: busId })
     });
     const data = await res.json();
+    if (handleAuthError(data)) return;
     if (data.code === 0) {
       showToast(data.message);
       loadTrips();
@@ -238,8 +341,9 @@ async function completeTrip(busId) {
 
 async function loadBuses() {
   try {
-    const res = await fetch(`${API_BASE}/dispatch/buses`);
+    const res = await authenticatedFetch(`${API_BASE}/dispatch/buses`);
     const data = await res.json();
+    if (handleAuthError(data)) return;
     if (data.code === 0) {
       renderBuses(data.data);
     }

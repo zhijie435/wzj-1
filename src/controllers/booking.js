@@ -87,6 +87,12 @@ class BookingController {
   async getBookings(req, res) {
     try {
       const { phone, date, status } = req.query;
+      const isAdmin = !!req.adminUser;
+
+      if (!isAdmin && !phone) {
+        return res.json({ code: 400, message: '请提供手机号进行查询' });
+      }
+
       let sql = `SELECT b.*, s.route, s.departure_time, s.arrival_time, s.price,
                         bu.plate_number, bu.driver_name, bu.driver_phone
                  FROM bookings b
@@ -120,6 +126,9 @@ class BookingController {
   async getBookingDetail(req, res) {
     try {
       const { id } = req.params;
+      const { phone } = req.query;
+      const isAdmin = !!req.adminUser;
+
       const booking = await db.query(
         `SELECT b.*, s.route, s.departure_time, s.arrival_time, s.price,
                 bu.plate_number, bu.driver_name, bu.driver_phone
@@ -134,6 +143,10 @@ class BookingController {
         return res.json({ code: 404, message: '订单不存在' });
       }
 
+      if (!isAdmin && booking[0].passenger_phone !== phone) {
+        return res.json({ code: 403, message: '无权查看该订单' });
+      }
+
       res.json({ code: 0, data: booking[0] });
     } catch (error) {
       console.error('[Booking] 获取订单详情失败:', error);
@@ -144,10 +157,17 @@ class BookingController {
   async cancelBooking(req, res) {
     try {
       const { id } = req.params;
+      const { phone } = req.body;
+      const isAdmin = !!req.adminUser;
+
       const booking = await db.query('SELECT * FROM bookings WHERE id = ?', [id]);
 
       if (booking.length === 0) {
         return res.json({ code: 404, message: '订单不存在' });
+      }
+
+      if (!isAdmin && booking[0].passenger_phone !== phone) {
+        return res.json({ code: 403, message: '无权取消该订单' });
       }
 
       if (booking[0].status === 'dispatched') {

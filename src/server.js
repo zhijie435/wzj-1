@@ -15,6 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/bookings', require('./routes/booking'));
 app.use('/api/dispatch', require('./routes/dispatch'));
+app.use('/api/auth', require('./routes/auth'));
 
 app.get('/api/health', (req, res) => {
   res.json({ code: 0, message: 'ok', env: process.env.NODE_ENV, db: process.env.DB_TYPE });
