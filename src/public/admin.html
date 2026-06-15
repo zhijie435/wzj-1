@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <title>班车管理系统</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>🚍 班车管理系统</h1>
+    <p>北京-张家口 班线</p>
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" data-tab="pending">待派车</button>
+      <button class="tab" data-tab="trips">派车记录</button>
+      <button class="tab" data-tab="buses">车辆管理</button>
+    </div>
+
+    <div id="pending-tab">
+      <div class="card">
+        <div class="card-title">筛选</div>
+        <div class="form-group">
+          <label class="form-label">日期</label>
+          <input type="date" class="form-input" id="filterDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">线路</label>
+          <select class="form-select" id="filterRoute">
+            <option value="">全部线路</option>
+            <option value="北京→张家口">北京→张家口</option>
+            <option value="张家口→北京">张家口→北京</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" id="filterBtn">查询</button>
+      </div>
+      <div id="pendingList"></div>
+    </div>
+
+    <div id="trips-tab" class="hidden">
+      <div id="tripsList"></div>
+    </div>
+
+    <div id="buses-tab" class="hidden">
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="totalBuses">0</div>
+          <div class="stat-label">总车辆</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="idleBuses" style="color:#52c41a">0</div>
+          <div class="stat-label">空闲</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="dispatchedBuses" style="color:#fa8c16">0</div>
+          <div class="stat-label">运行中</div>
+        </div>
+      </div>
+      <div id="busesList"></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="assignModal">
+    <div class="modal-content">
+      <h3 class="modal-title">分配车辆</h3>
+      <div class="modal-body">
+        <div id="assignInfo" style="margin-bottom:15px;font-size:0.9rem;color:#666;"></div>
+        <div class="bus-select" id="busOptions"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeAssignModal()">取消</button>
+        <button class="btn btn-primary" id="confirmAssignBtn">确认派车</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>
