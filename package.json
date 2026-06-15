@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "NODE_ENV=development node src/server.js",
-    "prod": "NODE_ENV=production node src/server.js"
+    "prod": "NODE_ENV=production node src/server.js",
+    "deploy": "bash scripts/deploy.sh",
+    "deploy:stop": "bash scripts/stop.sh",
+    "deploy:logs": "bash scripts/logs.sh"
   },
   "dependencies": {
     "express": "^4.18.2",
