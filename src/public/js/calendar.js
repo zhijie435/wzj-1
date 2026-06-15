@@ -49,7 +49,7 @@ function initDatePicker(wrapId, hiddenInputId, displayId, options = {}) {
 
     html += '<div class="calendar-days">';
     for (let i = 0; i < firstDay; i++) {
-      html += '<div class="calendar-day empty"></div>';
+      html += '<button type="button" class="calendar-day empty" disabled></button>';
     }
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;

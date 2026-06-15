@@ -14,7 +14,8 @@ const statusMap = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const datePicker = initDatePicker('travelDatePicker', 'travelDate', 'travelDateDisplay', {
     placeholder: '请选择乘车日期',

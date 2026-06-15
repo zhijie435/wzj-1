@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日历组件 UI 显示检查工具</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .test-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .test-header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+      color: #fff;
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+    }
+    .test-header h1 {
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+    }
+    .test-header p {
+      opacity: 0.8;
+      font-size: 0.9rem;
+    }
+    .test-section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+      border: 1px solid rgba(230, 234, 240, 0.8);
+    }
+    .test-section h2 {
+      font-size: 1.1rem;
+      color: #1e3a5f;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .test-section h2::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(180deg, #3182ce, #2c5282);
+      border-radius: 3px;
+    }
+    .test-calendar-demo {
+      max-width: 360px;
+      margin: 0 auto 20px;
+    }
+    .test-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .test-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.25s ease;
+    }
+    .test-btn-primary {
+      background: linear-gradient(135deg, #2c5282 0%, #2b6cb0 100%);
+      color: #fff;
+    }
+    .test-btn-secondary {
+      background: #edf2f7;
+      color: #4a5568;
+    }
+    .test-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .test-result {
+      margin-top: 16px;
+    }
+    .test-item {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border: 1px solid;
+    }
+    .test-item.pass {
+      background: #f0fff4;
+      border-color: #9ae6b4;
+    }
+    .test-item.fail {
+      background: #fff5f5;
+      border-color: #fc8181;
+    }
+    .test-item.warn {
+      background: #fffaf0;
+      border-color: #fbd38d;
+    }
+    .test-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      width: 24px;
+      text-align: center;
+    }
+    .test-content {
+      flex: 1;
+    }
+    .test-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+    .test-detail {
+      font-size: 0.85rem;
+      color: #718096;
+      line-height: 1.5;
+    }
+    .test-summary {
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+    .test-summary.pass {
+      background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+      border: 1px solid #9ae6b4;
+    }
+    .test-summary.fail {
+      background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+      border: 1px solid #fc8181;
+    }
+    .summary-item {
+      flex: 1;
+    }
+    .summary-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    .summary-label {
+      font-size: 0.8rem;
+      color: #4a5568;
+      margin-top: 4px;
+    }
+    .summary-item.pass .summary-value { color: #276749; }
+    .summary-item.fail .summary-value { color: #c53030; }
+    .summary-item.warn .summary-value { color: #c05621; }
+    .test-info-bar {
+      display: flex;
+      gap: 20px;
+      padding: 12px 16px;
+      background: #f7fafc;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      color: #4a5568;
+    }
+    .test-info-bar span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .test-info-bar strong {
+      color: #2c5282;
+      font-weight: 600;
+    }
+    .size-test {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .size-test label {
+      font-size: 0.85rem;
+      color: #4a5568;
+    }
+    .size-test input {
+      width: 80px;
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <div class="test-header">
+      <h1>📅 日历组件 UI 显示检查工具</h1>
+      <p>自动检测日历组件的显示问题、布局问题和交互问题</p>
+    </div>
+
+    <div class="test-section">
+      <h2>日历演示</h2>
+      <div class="test-calendar-demo">
+        <div class="date-picker-wrap" id="testDatePicker">
+          <div class="date-picker-input placeholder" id="testDateDisplay">点击选择日期</div>
+          <div class="date-picker-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <input type="hidden" id="testDate">
+        </div>
+      </div>
+      <div class="test-controls">
+        <button class="test-btn test-btn-primary" onclick="runAllTests()">运行全部检查</button>
+        <button class="test-btn test-btn-secondary" onclick="openCalendar()">打开日历</button>
+        <button class="test-btn test-btn-secondary" onclick="closeCalendar()">关闭日历</button>
+      </div>
+      <div class="test-info-bar">
+        <span>📅 今日日期: <strong id="todayInfo">-</strong></span>
+        <span>🕐 当前时区: <strong id="timezoneInfo">-</strong></span>
+        <span>📱 视口宽度: <strong id="viewportInfo">-</strong></span>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>响应式测试</h2>
+      <div class="size-test">
+        <label>模拟宽度:</label>
+        <input type="number" id="viewportWidth" value="375" min="320" max="1200">
+        <span style="font-size: 0.85rem; color: #718096;">px</span>
+        <button class="test-btn test-btn-secondary" onclick="testResponsive()">测试响应式</button>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>测试结果</h2>
+      <div id="testSummary"></div>
+      <div id="testResults"></div>
+    </div>
+  </div>
+
+  <script src="/js/calendar.js"></script>
+  <script>
+    let datePicker = null;
+    let testResults = [];
+
+    function initTestTool() {
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
+      datePicker = initDatePicker('testDatePicker', 'testDate', 'testDateDisplay', {
+        placeholder: '点击选择日期',
+        minToday: true
+      });
+
+      document.getElementById('todayInfo').textContent = todayStr;
+      document.getElementById('timezoneInfo').textContent = `UTC${-now.getTimezoneOffset()/60}`;
+      document.getElementById('viewportInfo').textContent = window.innerWidth + 'px';
+
+      window.addEventListener('resize', () => {
+        document.getElementById('viewportInfo').textContent = window.innerWidth + 'px';
+      });
+    }
+
+    function openCalendar() {
+      document.getElementById('testDateDisplay').click();
+    }
+
+    function closeCalendar() {
+      document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    }
+
+    function runTest(name, testFn) {
+      try {
+        const result = testFn();
+        testResults.push({
+          name: name,
+          status: result.pass ? 'pass' : (result.warn ? 'warn' : 'fail'),
+          detail: result.detail || ''
+        });
+        return result.pass;
+      } catch (e) {
+        testResults.push({
+          name: name,
+          status: 'fail',
+          detail: '测试执行错误: ' + e.message
+        });
+        return false;
+      }
+    }
+
+    function runAllTests() {
+      testResults = [];
+      
+      openCalendar();
+
+      setTimeout(() => {
+        runTest('基本结构检查', testBasicStructure);
+        runTest('星期标题完整性', testWeekdays);
+        runTest('月份天数正确性', testDaysInMonth);
+        runTest('空白天数量正确性', testEmptyDays);
+        runTest('日期元素类型一致性', testElementConsistency);
+        runTest('今日日期标记', testTodayMark);
+        runTest('禁用日期正确性', testDisabledDates);
+        runTest('选中日期样式', testSelectedDate);
+        runTest('布局网格正确性', testGridLayout);
+        runTest('导航按钮存在性', testNavButtons);
+        runTest('日期范围有效性', testDateRange);
+        runTest('日历尺寸合理性', testCalendarSize);
+        runTest('时区正确性', testTimezone);
+        
+        renderResults();
+      }, 100);
+    }
+
+    function testBasicStructure() {
+      const dropdown = document.querySelector('#testDatePicker .calendar-dropdown');
+      const header = document.querySelector('#testDatePicker .calendar-header');
+      const weekdays = document.querySelector('#testDatePicker .calendar-weekdays');
+      const days = document.querySelector('#testDatePicker .calendar-days');
+      
+      const allExist = dropdown && header && weekdays && days;
+      
+      return {
+        pass: allExist,
+        detail: allExist 
+          ? '日历下拉框、头部、星期栏、日期网格均存在'
+          : `缺少: ${!dropdown ? '下拉框 ' : ''}${!header ? '头部 ' : ''}${!weekdays ? '星期栏 ' : ''}${!days ? '日期网格' : ''}`
+      };
+    }
+
+    function testWeekdays() {
+      const weekdays = document.querySelectorAll('#testDatePicker .calendar-weekday');
+      const expected = ['日', '一', '二', '三', '四', '五', '六'];
+      
+      if (weekdays.length !== 7) {
+        return { pass: false, detail: `星期标题数量应为7个，实际${weekdays.length}个` };
+      }
+      
+      let correct = true;
+      let wrongOrder = [];
+      weekdays.forEach((w, i) => {
+        if (w.textContent.trim() !== expected[i]) {
+          correct = false;
+          wrongOrder.push(`第${i+1}个应为"${expected[i]}"，实际为"${w.textContent.trim()}"`);
+        }
+      });
+      
+      return {
+        pass: correct,
+        detail: correct ? '星期标题顺序正确：日一二三四五六' : wrongOrder.join('; ')
+      };
+    }
+
+    function testDaysInMonth() {
+      const title = document.querySelector('#testDatePicker .calendar-title');
+      const days = document.querySelectorAll('#testDatePicker .calendar-day:not(.empty)');
+      
+      if (!title) {
+        return { pass: false, detail: '找不到月份标题' };
+      }
+      
+      const titleText = title.textContent;
+      const match = titleText.match(/(\d{4})年(\d{1,2})月/);
+      if (!match) {
+        return { pass: false, detail: '月份标题格式不正确: ' + titleText };
+      }
+      
+      const year = parseInt(match[1]);
+      const month = parseInt(match[2]) - 1;
+      const expectedDays = new Date(year, month + 1, 0).getDate();
+      
+      return {
+        pass: days.length === expectedDays,
+        detail: `${year}年${month + 1}月应有${expectedDays}天，实际${days.length}天`
+      };
+    }
+
+    function testEmptyDays() {
+      const title = document.querySelector('#testDatePicker .calendar-title');
+      const emptyDays = document.querySelectorAll('#testDatePicker .calendar-day.empty');
+      
+      if (!title) {
+        return { pass: false, detail: '找不到月份标题' };
+      }
+      
+      const match = title.textContent.match(/(\d{4})年(\d{1,2})月/);
+      const year = parseInt(match[1]);
+      const month = parseInt(match[2]) - 1;
+      const firstDay = new Date(year, month, 1).getDay();
+      
+      return {
+        pass: emptyDays.length === firstDay,
+        detail: `该月1日是星期${firstDay}，应有${firstDay}个空白天，实际${emptyDays.length}个`
+      };
+    }
+
+    function testElementConsistency() {
+      const allDays = document.querySelectorAll('#testDatePicker .calendar-days .calendar-day');
+      const buttonDays = document.querySelectorAll('#testDatePicker .calendar-days button.calendar-day');
+      
+      return {
+        pass: allDays.length === buttonDays.length,
+        detail: allDays.length === buttonDays.length 
+          ? `所有${allDays.length}个日期元素均为button类型，类型一致`
+          : `共${allDays.length}个元素，其中button元素${buttonDays.length}个，存在不一致的元素类型`
+      };
+    }
+
+    function testTodayMark() {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const todayEl = document.querySelector('#testDatePicker .calendar-day.today');
+      
+      if (!todayEl) {
+        return { pass: false, detail: `找不到今日(${todayStr})的标记元素` };
+      }
+      
+      const dateAttr = todayEl.dataset.date;
+      return {
+        pass: dateAttr === todayStr,
+        detail: `今日标记的日期为${dateAttr}，应为${todayStr}`
+      };
+    }
+
+    function testDisabledDates() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      const disabledDays = document.querySelectorAll('#testDatePicker .calendar-day.disabled');
+      const allDateDays = document.querySelectorAll('#testDatePicker .calendar-day:not(.empty)');
+      
+      let wrongDisabled = [];
+      let shouldDisabled = [];
+      
+      allDateDays.forEach(day => {
+        const dateStr = day.dataset.date;
+        if (!dateStr) return;
+        
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        
+        const isDisabled = day.classList.contains('disabled');
+        const shouldBeDisabled = date < today;
+        
+        if (isDisabled && !shouldBeDisabled) {
+          wrongDisabled.push(dateStr);
+        }
+        if (!isDisabled && shouldBeDisabled) {
+          shouldDisabled.push(dateStr);
+        }
+      });
+      
+      const pass = wrongDisabled.length === 0 && shouldDisabled.length === 0;
+      
+      return {
+        pass: pass,
+        detail: pass 
+          ? `共${disabledDays.length}个禁用日期，均为今天之前的日期`
+          : `${wrongDisabled.length > 0 ? '错误禁用: ' + wrongDisabled.join(', ') + '; ' : ''}${shouldDisabled.length > 0 ? '应禁用未禁用: ' + shouldDisabled.join(', ') : ''}`
+      };
+    }
+
+    function testSelectedDate() {
+      const selectedEl = document.querySelector('#testDatePicker .calendar-day.selected');
+      const hiddenInput = document.getElementById('testDate');
+      
+      if (!hiddenInput.value) {
+        return { pass: true, warn: true, detail: '当前未选中日期，跳过选中状态检查' };
+      }
+      
+      if (!selectedEl) {
+        return { pass: false, detail: `选中日期为${hiddenInput.value}，但找不到selected样式的元素` };
+      }
+      
+      return {
+        pass: selectedEl.dataset.date === hiddenInput.value,
+        detail: `选中日期为${hiddenInput.value}，元素标记为${selectedEl.dataset.date}`
+      };
+    }
+
+    function testGridLayout() {
+      const daysContainer = document.querySelector('#testDatePicker .calendar-days');
+      if (!daysContainer) {
+        return { pass: false, detail: '找不到日期网格容器' };
+      }
+      
+      const style = window.getComputedStyle(daysContainer);
+      const gridTemplate = style.gridTemplateColumns;
+      const columns = gridTemplate.split(' ').filter(c => c.trim()).length;
+      
+      return {
+        pass: columns === 7,
+        detail: `网格列数应为7列，实际${columns}列 (${gridTemplate})`
+      };
+    }
+
+    function testNavButtons() {
+      const prevBtn = document.querySelector('#testDatePicker .calendar-nav[data-dir="prev"]');
+      const nextBtn = document.querySelector('#testDatePicker .calendar-nav[data-dir="next"]');
+      
+      return {
+        pass: prevBtn && nextBtn,
+        detail: prevBtn && nextBtn 
+          ? '上一月、下一月导航按钮均存在'
+          : `缺少: ${!prevBtn ? '上一月按钮 ' : ''}${!nextBtn ? '下一月按钮' : ''}`
+      };
+    }
+
+    function testDateRange() {
+      const dateDays = document.querySelectorAll('#testDatePicker .calendar-day:not(.empty)');
+      
+      let hasInvalidDates = false;
+      let invalidDetails = [];
+      
+      const title = document.querySelector('#testDatePicker .calendar-title');
+      const match = title.textContent.match(/(\d{4})年(\d{1,2})月/);
+      const year = parseInt(match[1]);
+      const month = parseInt(match[2]);
+      
+      dateDays.forEach((day, idx) => {
+        const dateStr = day.dataset.date;
+        const dayNum = parseInt(day.textContent.trim());
+        
+        if (!dateStr) {
+          hasInvalidDates = true;
+          invalidDetails.push(`第${idx+1}个元素缺少data-date属性`);
+          return;
+        }
+        
+        const [y, m, d] = dateStr.split('-').map(Number);
+        if (y !== year || m !== month || d !== dayNum) {
+          hasInvalidDates = true;
+          invalidDetails.push(`${day.textContent}日的data-date为${dateStr}，与显示不一致`);
+        }
+      });
+      
+      return {
+        pass: !hasInvalidDates,
+        detail: !hasInvalidDates 
+          ? `所有${dateDays.length}个日期的data-date属性与显示文本一致`
+          : invalidDetails.join('; ')
+      };
+    }
+
+    function testCalendarSize() {
+      const dropdown = document.querySelector('#testDatePicker .calendar-dropdown');
+      if (!dropdown) {
+        return { pass: false, detail: '找不到日历下拉框' };
+      }
+      
+      const rect = dropdown.getBoundingClientRect();
+      const maxWidth = 400;
+      const maxHeight = 500;
+      
+      const widthOk = rect.width <= maxWidth;
+      const heightOk = rect.height <= maxHeight;
+      
+      return {
+        pass: widthOk && heightOk,
+        detail: `日历尺寸: ${Math.round(rect.width)}px × ${Math.round(rect.height)}px，` +
+          (widthOk ? '宽度合理' : '宽度过大') + '，' +
+          (heightOk ? '高度合理' : '高度过大')
+      };
+    }
+
+    function testTimezone() {
+      const now = new Date();
+      const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const isoDateStr = now.toISOString().split('T')[0];
+      
+      const todayEl = document.querySelector('#testDatePicker .calendar-day.today');
+      if (!todayEl) {
+        return { pass: false, detail: '找不到今日标记' };
+      }
+      
+      const markedDate = todayEl.dataset.date;
+      
+      return {
+        pass: markedDate === localDateStr,
+        detail: markedDate === localDateStr 
+          ? `使用本地日期(${localDateStr})，时区处理正确（ISO日期为${isoDateStr}）`
+          : `标记日期为${markedDate}，本地日期为${localDateStr}，ISO日期为${isoDateStr}，可能存在时区问题`
+      };
+    }
+
+    function testResponsive() {
+      const width = parseInt(document.getElementById('viewportWidth').value);
+      
+      document.querySelector('.test-calendar-demo').style.width = width + 'px';
+      document.querySelector('.test-calendar-demo').style.margin = '0 auto';
+      
+      openCalendar();
+      
+      setTimeout(() => {
+        const dropdown = document.querySelector('#testDatePicker .calendar-dropdown');
+        const days = document.querySelectorAll('#testDatePicker .calendar-day');
+        
+        let firstDayStyle = null;
+        if (days.length > 0) {
+          const style = window.getComputedStyle(days[0]);
+          firstDayStyle = {
+            fontSize: style.fontSize,
+            borderRadius: style.borderRadius,
+            width: days[0].offsetWidth + 'px',
+            height: days[0].offsetHeight + 'px'
+          };
+        }
+        
+        alert(`宽度 ${width}px 下的日历:\n` +
+          `日历宽度: ${dropdown ? dropdown.offsetWidth + 'px' : 'N/A'}\n` +
+          `日期格子大小: ${firstDayStyle ? firstDayStyle.width + ' × ' + firstDayStyle.height : 'N/A'}\n` +
+          `日期字号: ${firstDayStyle ? firstDayStyle.fontSize : 'N/A'}\n` +
+          `圆角大小: ${firstDayStyle ? firstDayStyle.borderRadius : 'N/A'}`);
+        
+        document.querySelector('.test-calendar-demo').style.width = '';
+      }, 200);
+    }
+
+    function renderResults() {
+      const summaryEl = document.getElementById('testSummary');
+      const resultsEl = document.getElementById('testResults');
+      
+      const passed = testResults.filter(r => r.status === 'pass').length;
+      const failed = testResults.filter(r => r.status === 'fail').length;
+      const warned = testResults.filter(r => r.status === 'warn').length;
+      const allPassed = failed === 0;
+      
+      summaryEl.innerHTML = `
+        <div class="test-summary ${allPassed ? 'pass' : 'fail'}">
+          <div class="summary-item pass">
+            <div class="summary-value">${passed}</div>
+            <div class="summary-label">通过</div>
+          </div>
+          <div class="summary-item warn">
+            <div class="summary-value">${warned}</div>
+            <div class="summary-label">警告</div>
+          </div>
+          <div class="summary-item fail">
+            <div class="summary-value">${failed}</div>
+            <div class="summary-label">失败</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-value">${testResults.length}</div>
+            <div class="summary-label">总测试</div>
+          </div>
+        </div>
+      `;
+      
+      resultsEl.innerHTML = testResults.map(r => {
+        const icon = r.status === 'pass' ? '✅' : (r.status === 'warn' ? '⚠️' : '❌');
+        return `
+          <div class="test-item ${r.status}">
+            <div class="test-icon">${icon}</div>
+            <div class="test-content">
+              <div class="test-name">${r.name}</div>
+              <div class="test-detail">${r.detail}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', initTestTool);
+  </script>
+</body>
+</html>
