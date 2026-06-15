@@ -32,7 +32,32 @@
         <div class="card-title">选择班次</div>
         <div class="form-group">
           <label class="form-label">乘车日期<span class="required">*</span></label>
-          <input type="date" class="form-input" id="travelDate">
+          <div class="date-row">
+            <input type="date" class="form-input" id="travelDate">
+          </div>
+        </div>
+        <div class="schedule-summary" id="scheduleSummary" style="display:none;">
+          <div class="summary-item">
+            <span class="summary-label">可用班次</span>
+            <span class="summary-value" id="availableCount">0</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-label">总余票数</span>
+            <span class="summary-value" id="totalRemaining">0</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-label">紧张班次</span>
+            <span class="summary-value summary-warn" id="tightCount">0</span>
+          </div>
+        </div>
+        <div class="filter-row">
+          <label class="switch">
+            <input type="checkbox" id="filterAvailable">
+            <span class="slider"></span>
+            <span class="switch-label">仅显示有余票</span>
+          </label>
         </div>
         <div class="schedule-list" id="scheduleList"></div>
       </div>

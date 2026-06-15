@@ -3,6 +3,7 @@ const API_BASE = '/api';
 let currentRoute = '北京→张家口';
 let selectedScheduleId = null;
 let currentBookingId = null;
+let filterAvailableOnly = false;
 
 const statusMap = {
   pending: { text: '待处理', class: 'status-pending' },
@@ -51,6 +52,11 @@ function bindEvents() {
 
   document.getElementById('travelDate').addEventListener('change', function() {
     selectedScheduleId = null;
+    loadSchedules();
+  });
+
+  document.getElementById('filterAvailable').addEventListener('change', function() {
+    filterAvailableOnly = this.checked;
     renderSchedules(window.schedulesData || []);
   });
 
@@ -60,8 +66,11 @@ function bindEvents() {
 }
 
 async function loadSchedules() {
+  const travelDate = document.getElementById('travelDate').value;
   try {
-    const res = await fetch(`${API_BASE}/bookings/schedules?route=${encodeURIComponent(currentRoute)}`);
+    let url = `${API_BASE}/bookings/schedules?route=${encodeURIComponent(currentRoute)}`;
+    if (travelDate) url += `&date=${travelDate}`;
+    const res = await fetch(url);
     const data = await res.json();
     if (data.code === 0) {
       window.schedulesData = data.data;
@@ -74,25 +83,120 @@ async function loadSchedules() {
 
 function renderSchedules(schedules) {
   const container = document.getElementById('scheduleList');
+  const summaryEl = document.getElementById('scheduleSummary');
+  const hasDate = !!document.getElementById('travelDate').value;
+
   if (!schedules || schedules.length === 0) {
     container.innerHTML = '<div class="empty">暂无班次信息</div>';
+    summaryEl.style.display = 'none';
     return;
   }
 
-  container.innerHTML = schedules.map(s => `
-    <div class="schedule-item ${selectedScheduleId === s.id ? 'selected' : ''}" 
-         onclick="selectSchedule(${s.id})">
-      <div class="schedule-time">
-        <span class="departure">${s.departure_time}</span>
-        <span class="arrow">→</span>
-        <span class="arrival">${s.arrival_time}</span>
+  if (hasDate) {
+    let availableCount = 0;
+    let totalRemaining = 0;
+    let tightCount = 0;
+    schedules.forEach(s => {
+      const isFull = s.is_full === true || s.is_full === 1;
+      const remaining = s.remaining_seats !== undefined ? s.remaining_seats : 0;
+      if (!isFull) availableCount++;
+      totalRemaining += remaining;
+      if (!isFull && remaining <= 5) tightCount++;
+    });
+    document.getElementById('availableCount').textContent = availableCount;
+    document.getElementById('totalRemaining').textContent = totalRemaining;
+    document.getElementById('tightCount').textContent = tightCount;
+    summaryEl.style.display = 'flex';
+  } else {
+    summaryEl.style.display = 'none';
+  }
+
+  let filteredSchedules = schedules;
+  if (filterAvailableOnly && hasDate) {
+    filteredSchedules = schedules.filter(s => !(s.is_full === true || s.is_full === 1));
+  }
+
+  if (filteredSchedules.length === 0) {
+    container.innerHTML = '<div class="empty">没有符合条件的班次</div>';
+    return;
+  }
+
+  container.innerHTML = filteredSchedules.map(s => {
+    const isFull = s.is_full === true || s.is_full === 1;
+    const remaining = s.remaining_seats !== undefined ? s.remaining_seats : null;
+    const total = s.total_seats || 45;
+
+    let seatBadgeHtml = '';
+    let progressHtml = '';
+    let seatInfoHtml = '';
+
+    if (hasDate && remaining !== null) {
+      const booked = total - remaining;
+      const percent = Math.round((booked / total) * 100);
+      let barClass = 'progress-bar-ok';
+      if (isFull) {
+        barClass = 'progress-bar-full';
+      } else if (remaining <= 5) {
+        barClass = 'progress-bar-low';
+      }
+
+      if (isFull) {
+        seatBadgeHtml = '<span class="seat-badge seat-full">已满</span>';
+      } else if (remaining <= 5) {
+        seatBadgeHtml = `<span class="seat-badge seat-low">仅剩${remaining}座</span>`;
+      } else {
+        seatBadgeHtml = `<span class="seat-badge seat-ok">余${remaining}座</span>`;
+      }
+
+      seatInfoHtml = `<div class="seat-info">${booked}/${total}座已售</div>`;
+      progressHtml = `
+        <div class="progress-wrap">
+          <div class="progress-bar ${barClass}" style="width:${percent}%"></div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="schedule-item ${selectedScheduleId === s.id ? 'selected' : ''} ${isFull ? 'full' : ''}" 
+           onclick="${isFull ? '' : `selectSchedule(${s.id})`}">
+        <div class="schedule-left">
+          <div class="schedule-time">
+            <span class="departure">${s.departure_time}</span>
+            <span class="arrow-wrap"><span class="arrow-icon">→</span><span class="duration">约${calculateDuration(s.departure_time, s.arrival_time)}</span></span>
+            <span class="arrival">${s.arrival_time}</span>
+          </div>
+          <div class="schedule-tags">
+            ${seatBadgeHtml}
+          </div>
+          ${progressHtml}
+          ${seatInfoHtml}
+        </div>
+        <div class="schedule-right">
+          <div class="schedule-price">¥${s.price}<small>/人</small></div>
+          ${isFull && hasDate ? '<div class="full-tag">已满员</div>' : (!isFull && hasDate && selectedScheduleId !== s.id ? '<div class="select-hint">点击选择</div>' : '')}
+          ${selectedScheduleId === s.id ? '<div class="selected-tag">✓ 已选</div>' : ''}
+        </div>
       </div>
-      <div class="schedule-price">¥${s.price}<small>/人</small></div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
+}
+
+function calculateDuration(departure, arrival) {
+  const [dh, dm] = departure.split(':').map(Number);
+  const [ah, am] = arrival.split(':').map(Number);
+  let totalMin = (ah * 60 + am) - (dh * 60 + dm);
+  if (totalMin < 0) totalMin += 24 * 60;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h}h${m > 0 ? m + 'm' : ''}`;
 }
 
 function selectSchedule(id) {
+  const schedule = (window.schedulesData || []).find(s => s.id === id);
+  if (schedule && (schedule.is_full === true || schedule.is_full === 1)) {
+    showToast('该班次已满员，请选择其他班次');
+    return;
+  }
   selectedScheduleId = id;
   renderSchedules(window.schedulesData || []);
 }
@@ -107,6 +211,13 @@ async function submitBooking() {
   if (!/^1\d{10}$/.test(passengerPhone)) return showToast('请输入正确的手机号');
   if (!travelDate) return showToast('请选择乘车日期');
   if (!selectedScheduleId) return showToast('请选择班次');
+
+  const schedule = (window.schedulesData || []).find(s => s.id === selectedScheduleId);
+  if (schedule && (schedule.is_full === true || schedule.is_full === 1)) {
+    selectedScheduleId = null;
+    renderSchedules(window.schedulesData || []);
+    return showToast('该班次已满员，请刷新后选择其他班次');
+  }
 
   try {
     const res = await fetch(`${API_BASE}/bookings`, {

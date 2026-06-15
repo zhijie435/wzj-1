@@ -3,7 +3,7 @@ const db = require('../db');
 class BookingController {
   async getSchedules(req, res) {
     try {
-      const { route } = req.query;
+      const { route, date } = req.query;
       let sql = 'SELECT * FROM schedules WHERE 1=1';
       const params = [];
       if (route) {
@@ -12,6 +12,21 @@ class BookingController {
       }
       sql += ' ORDER BY departure_time';
       const schedules = await db.query(sql, params);
+
+      if (date) {
+        for (const s of schedules) {
+          const booked = await db.query(
+            `SELECT COUNT(*) as count FROM bookings 
+             WHERE schedule_id = ? AND travel_date = ? AND status != 'cancelled'`,
+            [s.id, date]
+          );
+          const bookedCount = booked[0].count;
+          s.booked_count = bookedCount;
+          s.remaining_seats = Math.max(0, s.total_seats - bookedCount);
+          s.is_full = bookedCount >= s.total_seats;
+        }
+      }
+
       res.json({ code: 0, data: schedules });
     } catch (error) {
       console.error('[Booking] 获取班次失败:', error);
@@ -30,6 +45,15 @@ class BookingController {
       const schedule = await db.query('SELECT * FROM schedules WHERE id = ?', [schedule_id]);
       if (schedule.length === 0) {
         return res.json({ code: 400, message: '班次不存在' });
+      }
+
+      const bookedCount = await db.query(
+        `SELECT COUNT(*) as count FROM bookings 
+         WHERE schedule_id = ? AND travel_date = ? AND status != 'cancelled'`,
+        [schedule_id, travel_date]
+      );
+      if (bookedCount[0].count >= schedule[0].total_seats) {
+        return res.json({ code: 400, message: '该班次已满员，请选择其他班次' });
       }
 
       const existingBookings = await db.query(

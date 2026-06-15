@@ -49,6 +49,7 @@ class DB {
         departure_time TEXT NOT NULL,
         arrival_time TEXT NOT NULL,
         price REAL NOT NULL DEFAULT 80,
+        total_seats INTEGER NOT NULL DEFAULT 45,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -88,6 +89,7 @@ class DB {
         departure_time VARCHAR(10) NOT NULL,
         arrival_time VARCHAR(10) NOT NULL,
         price DECIMAL(10,2) NOT NULL DEFAULT 80,
+        total_seats INT NOT NULL DEFAULT 45,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -113,19 +115,19 @@ class DB {
     const scheduleCount = await this.query('SELECT COUNT(*) as count FROM schedules');
     if (scheduleCount[0].count === 0) {
       const schedules = [
-        { route: '北京→张家口', departure_time: '07:00', arrival_time: '10:30', price: 80 },
-        { route: '北京→张家口', departure_time: '09:00', arrival_time: '12:30', price: 80 },
-        { route: '北京→张家口', departure_time: '11:00', arrival_time: '14:30', price: 80 },
-        { route: '北京→张家口', departure_time: '14:00', arrival_time: '17:30', price: 80 },
-        { route: '北京→张家口', departure_time: '17:00', arrival_time: '20:30', price: 80 },
-        { route: '张家口→北京', departure_time: '07:00', arrival_time: '10:30', price: 80 },
-        { route: '张家口→北京', departure_time: '09:00', arrival_time: '12:30', price: 80 },
-        { route: '张家口→北京', departure_time: '14:00', arrival_time: '17:30', price: 80 },
+        { route: '北京→张家口', departure_time: '07:00', arrival_time: '10:30', price: 80, total_seats: 45 },
+        { route: '北京→张家口', departure_time: '09:00', arrival_time: '12:30', price: 80, total_seats: 45 },
+        { route: '北京→张家口', departure_time: '11:00', arrival_time: '14:30', price: 80, total_seats: 35 },
+        { route: '北京→张家口', departure_time: '14:00', arrival_time: '17:30', price: 80, total_seats: 45 },
+        { route: '北京→张家口', departure_time: '17:00', arrival_time: '20:30', price: 80, total_seats: 35 },
+        { route: '张家口→北京', departure_time: '07:00', arrival_time: '10:30', price: 80, total_seats: 45 },
+        { route: '张家口→北京', departure_time: '09:00', arrival_time: '12:30', price: 80, total_seats: 45 },
+        { route: '张家口→北京', departure_time: '14:00', arrival_time: '17:30', price: 80, total_seats: 35 },
       ];
       for (const s of schedules) {
         await this.query(
-          'INSERT INTO schedules (route, departure_time, arrival_time, price) VALUES (?, ?, ?, ?)',
-          [s.route, s.departure_time, s.arrival_time, s.price]
+          'INSERT INTO schedules (route, departure_time, arrival_time, price, total_seats) VALUES (?, ?, ?, ?, ?)',
+          [s.route, s.departure_time, s.arrival_time, s.price, s.total_seats]
         );
       }
     }
