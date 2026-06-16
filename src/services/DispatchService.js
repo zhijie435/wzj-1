@@ -36,7 +36,15 @@ class DispatchService {
   }
 
   async assignBus(bus_id, schedule_id, travel_date) {
-    if (!bus_id || !schedule_id || !travel_date) {
+    if (
+      bus_id === null ||
+      bus_id === undefined ||
+      bus_id === '' ||
+      schedule_id === null ||
+      schedule_id === undefined ||
+      schedule_id === '' ||
+      !travel_date
+    ) {
       return { success: false, code: 400, message: '参数不完整' };
     }
 
@@ -82,7 +90,7 @@ class DispatchService {
   }
 
   async completeTrip(bus_id) {
-    if (!bus_id) {
+    if (bus_id === null || bus_id === undefined || bus_id === '') {
       return { success: false, code: 400, message: '参数不完整' };
     }
 
